@@ -34,8 +34,7 @@ def Yeq(T, m):
 
 H = lambda T: np.sqrt(np.pi ** 2 * gstar(T) / 90) * T ** 2 / Mpl
 
-gDelta = lambda x: x * ((1 - x ** 4) * (1 - 8 * x ** 2 + x ** 4) - 24 * x ** 4 * np.log(x))
-g1 = lambda x: (1 - x) ** 4 * (1 + 4 * x + 10 * x ** 2 + 4 * x ** 3 + x ** 4)
+g1 = lambda x: (1 - x ** 4) * (1 - 8 * x ** 2 + x ** 4) - 24 * x ** 4 * np.log(x)
 g2 = lambda x: x * ((1 - x ** 2) * (1 + 10 * x ** 2 + x ** 4) + 12 * x ** 2 * (1 + x ** 2) * np.log(x))
 
 def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, scat_asym = False):
@@ -52,19 +51,19 @@ def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, 
     theta = float(theta)
     
     GammaSB = lambda T: 45 * zeta3 * kappa1 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m1
-    GammaSB2 = lambda T: 45 * zeta3 * kappa2 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m1
-    GammaS0 = lambda T: 27 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 32 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
+    GammaSB2 = lambda T: 45 * zeta3 * kappa2 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m2
+    GammaS0 = lambda T: 9 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 8 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
     GammaSBV = lambda T: kappa2 ** 4 * lmbda ** 4 * T ** 11 / m2 ** 2 / M ** 8 # constant factor omitted
-    GammaDB = 3 * kappa1 ** 2 * lmbda ** 2 * m1 ** 5 / 3072 / np.pi ** 3 / M ** 4
-    GammaDB2 = 3 * kappa2 ** 2 * lmbda ** 2 * m2 ** 5 / 3072 / np.pi ** 3 / M ** 4
-    GammaD0 = 3 * kappa1 ** 2 * kappa2 ** 2 * m1 ** 5 / 3072 / np.pi ** 3 / M ** 4 * (g1(m2 / m1) - 2 * np.cos(2 * theta) * g2(m2 / m1))
+    GammaDB = kappa1 ** 2 * lmbda ** 2 * m1 ** 5 / 1024 / np.pi ** 3 / M ** 4
+    GammaDB2 = kappa2 ** 2 * lmbda ** 2 * m2 ** 5 / 1024 / np.pi ** 3 / M ** 4
+    GammaD0 = kappa1 ** 2 * kappa2 ** 2 * m1 ** 5 / 1024 / np.pi ** 3 / M ** 4 * (g1(m2 / m1) - 2 * np.cos(2 * theta) * g2(m2 / m1))
 
     T0 = 10 * m1 * (H(m1) / (2 * GammaSB(m1) + 2 * GammaS0(m1))) ** (1 / 3) # in GeV
     if bounds and T0 > M: return None # EFT bound
     Tf = 0.1 * min(np.sqrt((2 * GammaDB + GammaD0) / H(1.)), np.sqrt(2 * GammaDB2 / H(1.)), m2) # in GeV
     
-    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * gDelta(m2 / m1))
-           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + kappa1 ** 2 * lmbda ** 2))
+    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * m2 / m1 * g1(m2 / m1))
+           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + 2 * kappa1 ** 2 * lmbda ** 2))
 
     def ode(logT, Ys):
         T = np.exp(logT)
@@ -94,18 +93,18 @@ def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, 
 
 # Naive asymmetry if psi1 has relativistic abundance (from time when it decouples)
 def asym_naive(m1, m2, M, kappa1, kappa2, lmbda, theta):
-    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * gDelta(m2 / m1))
-           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + kappa1 ** 2 * lmbda ** 2))
+    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * m2 / m1 * g1(m2 / m1))
+           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + 2 * kappa1 ** 2 * lmbda ** 2))
     GammaSB = lambda T: 45 * zeta3 * kappa1 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m1
-    GammaS0 = lambda T: 27 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 32 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
+    GammaS0 = lambda T: 9 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 8 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
     T0 = 10 * m1 * (H(m1) / (2 * GammaSB(m1) + 2 * GammaS0(m1))) ** (1 / 3) # in GeV
     Td = optimize.fsolve(lambda T: 2 * GammaSB(T) + 2 * GammaS0(T) - H(T), T0)
     return eps * Yeq(Td, 0)
 
 xlim1 = 7.5e3
-xlim2 = 1.5e5
+xlim2 = 1.2e5
 ylim1 = 1.2e-11
-ylim2 = 2e-9
+ylim2 = 1e-9
 
 Ms = np.logspace(np.log10(xlim1 / 0.9), np.log10(xlim2 * 0.9), 50)
 asyms = np.array([asym(50. / 0.3, 50., M, 3e-4, 1., 1., np.pi / 3) for M in Ms])
@@ -113,8 +112,8 @@ asym0s = np.array([asym_naive(50. / 0.3, 50., M, 3e-4, 1., 1., np.pi / 3) for M 
 ax.loglog(Ms, asyms, color = BLUE)
 ax.loglog(Ms, asym0s, color = BLUE, ls = ':',)
 ax.axhline(8.8e-11, color = '0.6', ls = '--')
-ax.text(1.7e4, 1.33e-9, r'$\epsilon Y_\mathrm{eq}^{(0)}$', ha = 'center', va = 'center', color = 0.8 * BLUE, rotation = -42.)
-ax.text(1.2e5, 9.8e-11, r'$Y_{\Delta B,\mathrm{obs}}$', ha = 'center', va = 'center', color = '0.5')
+ax.text(1.9e4, 7.5e-10, r'$\epsilon Y_\mathrm{eq}^{(0)}$', ha = 'center', va = 'center', color = 0.8 * BLUE, rotation = -42.)
+ax.text(1e5, 9.8e-11, r'$Y_{\Delta B,\mathrm{obs}}$', ha = 'center', va = 'center', color = '0.5')
 
 ax.set_xlim(xlim1, xlim2)
 ax.set_ylim(ylim1, ylim2)

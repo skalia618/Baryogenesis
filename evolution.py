@@ -35,8 +35,7 @@ def Yeq(T, m):
 
 H = lambda T: np.sqrt(np.pi ** 2 * gstar(T) / 90) * T ** 2 / Mpl
 
-gDelta = lambda x: x * ((1 - x ** 4) * (1 - 8 * x ** 2 + x ** 4) - 24 * x ** 4 * np.log(x))
-g1 = lambda x: (1 - x) ** 4 * (1 + 4 * x + 10 * x ** 2 + 4 * x ** 3 + x ** 4)
+g1 = lambda x: (1 - x ** 4) * (1 - 8 * x ** 2 + x ** 4) - 24 * x ** 4 * np.log(x)
 g2 = lambda x: x * ((1 - x ** 2) * (1 + 10 * x ** 2 + x ** 4) + 12 * x ** 2 * (1 + x ** 2) * np.log(x))
 
 def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, scat_asym = False):
@@ -53,19 +52,19 @@ def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, 
     theta = float(theta)
     
     GammaSB = lambda T: 45 * zeta3 * kappa1 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m1
-    GammaSB2 = lambda T: 45 * zeta3 * kappa2 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m1
-    GammaS0 = lambda T: 27 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 32 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
+    GammaSB2 = lambda T: 45 * zeta3 * kappa2 ** 2 * lmbda ** 2 * T ** 5 / 16 / np.pi ** 3 / M ** 4 # assuming T >> m2
+    GammaS0 = lambda T: 9 * zeta3 * kappa1 ** 2 * kappa2 ** 2 * T ** 5 / 8 / np.pi ** 3 / M ** 4 # assuming T >> m1,m2
     GammaSBV = lambda T: kappa2 ** 4 * lmbda ** 4 * T ** 11 / m2 ** 2 / M ** 8 # constant factor omitted
-    GammaDB = 3 * kappa1 ** 2 * lmbda ** 2 * m1 ** 5 / 3072 / np.pi ** 3 / M ** 4
-    GammaDB2 = 3 * kappa2 ** 2 * lmbda ** 2 * m2 ** 5 / 3072 / np.pi ** 3 / M ** 4
-    GammaD0 = 3 * kappa1 ** 2 * kappa2 ** 2 * m1 ** 5 / 3072 / np.pi ** 3 / M ** 4 * (g1(m2 / m1) - 2 * np.cos(2 * theta) * g2(m2 / m1))
+    GammaDB = kappa1 ** 2 * lmbda ** 2 * m1 ** 5 / 1024 / np.pi ** 3 / M ** 4
+    GammaDB2 = kappa2 ** 2 * lmbda ** 2 * m2 ** 5 / 1024 / np.pi ** 3 / M ** 4
+    GammaD0 = kappa1 ** 2 * kappa2 ** 2 * m1 ** 5 / 1024 / np.pi ** 3 / M ** 4 * (g1(m2 / m1) - 2 * np.cos(2 * theta) * g2(m2 / m1))
 
     T0 = 10 * m1 * (H(m1) / (2 * GammaSB(m1) + 2 * GammaS0(m1))) ** (1 / 3) # in GeV
     if bounds and T0 > M: return None # EFT bound
     Tf = 0.1 * min(np.sqrt((2 * GammaDB + GammaD0) / H(1.)), np.sqrt(2 * GammaDB2 / H(1.)), m2) # in GeV
     
-    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * gDelta(m2 / m1))
-           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + kappa1 ** 2 * lmbda ** 2))
+    eps = (m1 ** 2 / 8 / np.pi / M ** 2 * (kappa1 ** 2 * kappa2 ** 2 * lmbda ** 2 * np.sin(2 * theta) * m2 / m1 * g1(m2 / m1))
+           / (kappa1 ** 2 * kappa2 ** 2 * g1(m2 / m1) - 2 * kappa1 ** 2 * kappa2 ** 2 * np.cos(2 * theta) * g2(m2 / m1) + 2 * kappa1 ** 2 * lmbda ** 2))
 
     def ode(logT, Ys):
         T = np.exp(logT)
@@ -96,17 +95,17 @@ def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, 
     if full: return sol, T1, T2
     else: return sol.y[2,-1]
 
-##sol, T1, T2 = asym(50. / 0.3, 50., 59000., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
-##xlim1 = 0.5 * np.exp(sol.t[-1])
-##xlim2 = 2. * np.exp(sol.t[0])
-##ax.text(T1 * 0.78, 0.002, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
-##ax.text(T2 * 0.77, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+sol, T1, T2 = asym(50. / 0.3, 50., 50000., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
+xlim1 = 0.5 * np.exp(sol.t[-1])
+xlim2 = 2. * np.exp(sol.t[0])
+ax.text(T1 * 0.78, 0.002, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+ax.text(T2 * 0.77, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
 
-sol, T1, T2 = asym(50. / 0.3, 50., 9200., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
-xlim1 = 0.66 * np.exp(sol.t[-1])
-xlim2 = 1.5 * np.exp(sol.t[0])
-ax.text(T1 * 0.89, 0.0005, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
-ax.text(T2 * 0.87, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+##sol, T1, T2 = asym(50. / 0.3, 50., 9250., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
+##xlim1 = 0.66 * np.exp(sol.t[-1])
+##xlim2 = 1.5 * np.exp(sol.t[0])
+##ax.text(T1 * 0.89, 0.0005, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+##ax.text(T2 * 0.87, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
 
 ax.axvline(T1, color = '0.7', ls = ':')
 ax.axvline(T2, color = '0.7', ls = ':')
@@ -116,10 +115,10 @@ ax.plot(np.exp(sol.t), sol.y[0], color = BLUE, label = '$Y_1$')
 ax.plot(np.exp(sol.t), sol.y[1], color = ORANGE, label = '$Y_2$')
 ax.plot(np.exp(sol.t), sol.y[2] * 3e7, color = GREEN, label = r'$Y_{\Delta B}\cdot3\times10^7$')
 
-##handles, labels = ax.get_legend_handles_labels()
-##handles[:2] = [handles[1], handles[0]]
-##labels[:2] = [labels[1], labels[0]]
-##ax.legend(handles, labels, loc = (0.7, 0.08))
+handles, labels = ax.get_legend_handles_labels()
+handles[:2] = [handles[1], handles[0]]
+labels[:2] = [labels[1], labels[0]]
+ax.legend(handles, labels, loc = (0.7, 0.08))
 
 ylim1 = -0.0002
 ylim2 = 0.0041
@@ -147,5 +146,5 @@ secyax.tick_params(which = 'both', direction = 'in')
 plt.setp(secyax.get_yticklabels(), visible = False)
 
 fig.tight_layout()
-fig.show()
-#fig.savefig('lowM.pdf')
+#fig.show()
+fig.savefig('highM.pdf')

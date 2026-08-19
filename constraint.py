@@ -51,6 +51,7 @@ data2 = np.load('contour2.npz')
 data3 = np.load('contour3.npz')
 kappa1_1 = data1['kappa1']
 contour1 = data1['contour']
+x = data1['x']
 kappa2 = data1['kappa2']
 lmbda = data1['lmbda']
 bound_mask1 = data1['bound_mask']
@@ -77,10 +78,12 @@ ax.text(masses[800], Mmax * 0.6, r'Collider', color = '0.2', ha = 'center', va =
 ax.text(mp * 0.8, np.sqrt(ylim1 * ylim2), r'Proton Decay', color = '0.2', ha = 'center', va = 'center', rotation = 'vertical')
 if flavor == 'dsc':
     ax.plot(masses, dsc_bound, color = '0.6', ls = '--')
-    ax.text(masses[500], dsc_bound[500] * 1.35, r'Neutron Oscillations', color = '0.2', ha = 'center', va = 'center', rotation = angle)
+    ax.text(masses[750], dsc_bound[750] * 1.35, r'Neutron Oscillations', color = '0.2', ha = 'center', va = 'center', rotation = angle)
 elif flavor == 'udb':
     ax.plot(masses, udb_bound, color = '0.6', ls = '--')
-    ax.text(masses[280], udb_bound[280] * 1.35, r'Neutron Oscillations', color = '0.2', ha = 'center', va = 'center', rotation = angle)
+    ax.text(masses[180], udb_bound[180] * 1.35, r'Neutron Oscillations', color = '0.2', ha = 'center', va = 'center', rotation = angle)
+ax.plot(masses, masses / x, color = '0.7', ls = ':')
+ax.text(masses[800], masses[800] / x * 1.48, r'$m_1=M$', color = '0.5', ha = 'center', va = 'center', rotation = 180 / np.pi * np.arctan(np.log(xlim2 / xlim1) / np.log(ylim2 / ylim1) * 3 / 4))
 ax.text(3e4, 1.25e8, rf'${flavor}$', ha = 'center', va = 'center', fontsize = 16, bbox = dict(boxstyle = 'round', facecolor = 'white', alpha = 0.5))
 
 def scientific(x, n = 0):
