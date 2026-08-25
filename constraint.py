@@ -6,7 +6,7 @@ plt.rcParams.update({'text.usetex': True, 'font.family': 'serif', 'font.size': 1
 
 fig, ax = plt.subplots(figsize = (8., 6.))
 
-flavor = 'dsc' # 'uds', 'dsc', or 'udb'
+flavor = 'uds' # 'uds', 'dsc', or 'udb'
 
 BLUE = np.array([81, 167, 192]) / 255
 ORANGE = np.array([255, 184, 56]) / 255
@@ -92,7 +92,10 @@ def scientific(x, n = 0):
     if f'{coeff:.{n}f}' != '1': return rf'{coeff:.{n}f}\times10^{{{exp}}}'
     else: return rf'10^{{{exp}}}'
 
-plt.loglog(*contour1[bound_mask1].T, color = BLUE, label = r'$\kappa_1=' + scientific(kappa1_1) + '$', zorder = 2.3)
+# bound_mask indicates where EFT is violated (initial temperature of simulation > M)
+# For blue contour, this occurs very marginally, but the initial temperature is conservatively high, so we do not apply the mask
+#plt.loglog(*contour1[bound_mask1].T, color = BLUE, label = r'$\kappa_1=' + scientific(kappa1_1) + '$', zorder = 2.3)
+plt.loglog(*contour1.T, color = BLUE, label = r'$\kappa_1=' + scientific(kappa1_1) + '$', zorder = 2.3)
 plt.loglog(*contour2[bound_mask2].T, color = ORANGE, label = r'$\kappa_1=' + scientific(kappa1_2) + '$', zorder = 2.2)
 plt.loglog(*contour3[bound_mask3].T, color = RED, label = r'$\kappa_1=' + scientific(kappa1_3) + '$', zorder = 2.1)
 
@@ -113,7 +116,7 @@ secyax = ax.secondary_yaxis('right')
 secyax.tick_params(which = 'both', direction = 'in')
 plt.setp(secyax.get_yticklabels(), visible = False)
 
-#ax.legend(loc = 'upper left', bbox_to_anchor = (0.05, 0.99))
+ax.legend(loc = 'upper left', bbox_to_anchor = (0.05, 0.99))
 
 fig.tight_layout()
 #fig.show()
