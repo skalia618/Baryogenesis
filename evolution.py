@@ -1,9 +1,16 @@
+from matplotlib import ticker
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate, optimize
 import time
-import warnings
-warnings.simplefilter('ignore', category = DeprecationWarning)
+
+plt.rcParams.update({'text.usetex': True, 'font.family': 'serif', 'font.size': 13})
+
+fig, ax = plt.subplots(figsize = (8., 6.))
+
+BLUE = np.array([81, 167, 192]) / 255
+ORANGE = np.array([255, 184, 56]) / 255
+GREEN = np.array([107, 171, 115]) / 255
 
 t0 = time.time()
 Mpl = 2.4e18 # in GeV
@@ -77,66 +84,67 @@ def asym(m1, m2, M, kappa1, kappa2, lmbda, theta, full = False, bounds = False, 
                                    + 6 * GammaSBV(T) * Ydel)
 
         return [dY1, dY2, dYdel]
-    sol = integrate.solve_ivp(ode, [np.log(T0), np.log(Tf)], [Yeq(T0, m1), Yeq(T0, m2), 0.], method = 'Radau', atol = 1e-15)
+    sol = integrate.solve_ivp(ode, [np.log(T0), np.log(Tf)], [Yeq(T0, m1), Yeq(T0, m2), 0.], method = 'Radau', atol = 1e-15, t_eval = np.linspace(np.log(T0), np.log(Tf), 1000))
 
     ind = np.argmin(np.abs(sol.t - np.log(1e-3)))
     if bounds and (sol.y[0,ind] > 1e-2 * Yeq(1e-3, 0) or sol.y[1,ind] > 1e-2 * Yeq(1e-3, 0)): return None # BBN bound
 
-    if full: return sol
+    T1 = optimize.fsolve(lambda T: 2 * GammaSB(T) + 2 * GammaS0(T) - H(T), T0)
+    T2 = optimize.fsolve(lambda T: 2 * GammaDB + GammaD0 - H(T), T0)
+
+    if full: return sol, T1, T2
     else: return sol.y[2,-1]
 
-def contour(x, kappa1, m2i, Mi, kappa2 = 1., lmbda = 1., theta = np.pi / 3, target = 8.7e-11, dx = 1e-2, err = 1e-3):
-    # target is observed Y_delB
-    # dx is distance (in log space) used to calculate derivatives
-    # err controls step size along contour by limiting relative error in asym (before correction)
-    asym_sh = lambda m2, M: asym(m2 / x, m2, M, kappa1, kappa2, lmbda, theta)
+sol, T1, T2 = asym(50. / 0.3, 50., 50000., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
+xlim1 = 0.5 * np.exp(sol.t[-1])
+xlim2 = 2. * np.exp(sol.t[0])
+ax.text(T1 * 0.78, 0.002, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+ax.text(T2 * 0.77, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
 
-    contour = [(m2i, optimize.fsolve(lambda M: asym_sh(m2i, M) - target, Mi, epsfcn = dx * Mi)[0])]
-    while contour[-1][0] <= m2i:
-        m2 = contour[-1][0]
-        M = contour[-1][1]
+##sol, T1, T2 = asym(50. / 0.3, 50., 9250., 3e-4, 1., 1., np.pi / 3, full = True, bounds = True)
+##xlim1 = 0.66 * np.exp(sol.t[-1])
+##xlim2 = 1.5 * np.exp(sol.t[0])
+##ax.text(T1 * 0.89, 0.0005, r'$\Gamma_S=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
+##ax.text(T2 * 0.87, 0.0035, r'$\Gamma_D=H$', ha = 'center', va = 'center', color = '0.6', rotation = 90)
 
-        asym0 = asym_sh(m2, M)
-        asym_m2p = asym_sh(m2 * (1 + dx), M)
-        asym_m2m = asym_sh(m2 * (1 - dx), M)
-        asym_Mp = asym_sh(m2, M * (1 + dx))
-        asym_Mm = asym_sh(m2, M * (1 - dx))
-        asym_pp = asym_sh(m2 * (1 + dx), M * (1 + dx))
-        asym_mp = asym_sh(m2 * (1 - dx), M * (1 + dx))
-        asym_pm = asym_sh(m2 * (1 + dx), M * (1 - dx))
-        asym_mm = asym_sh(m2 * (1 - dx), M * (1 - dx))
-        
-        dm2 = (asym_m2p - asym_m2m) / 2 / dx
-        dM = (asym_Mp - asym_Mm) / 2 / dx
-        ddm2 = (asym_m2p - 2 * asym0 + asym_m2m) / dx ** 2
-        ddM = (asym_Mp - 2 * asym0 + asym_Mm) / dx ** 2
-        dm2dM = (asym_pp - asym_mp - asym_pm + asym_mm) / 4 / dx ** 2
+ax.axvline(T1, color = '0.7', ls = ':')
+ax.axvline(T2, color = '0.7', ls = ':')
 
-        step = np.sqrt(2 * err * asym0 / np.abs(ddm2 * dM ** 2 - 2 * dm2dM * dm2 * dM + ddM * dm2 ** 2))
-        # Cap step size at 0.1 (in log space)
-        if np.abs(dM * step) > 0.1 or np.abs(dm2 * step) > 0.1:
-            step = 0.1 / max(np.abs(dM), np.abs(dm2))
-        correction = asym_sh(m2 * (1 + dM * step), M * (1 - dm2 * step)) - target
-        
-        contour.append((m2 * (1 + dM * step - correction * dm2 / (dm2 ** 2 + dM ** 2)), M * (1 - dm2 * step - correction * dM / (dm2 ** 2 + dM ** 2))))
+ax.plot(np.exp(sol.t), Yeq(np.exp(sol.t), 50. / 0.3), color = BLUE, ls = '--', label = r'$Y_{1,\mathrm{eq}}$')
+ax.plot(np.exp(sol.t), sol.y[0], color = BLUE, label = '$Y_1$')
+ax.plot(np.exp(sol.t), sol.y[1], color = ORANGE, label = '$Y_2$')
+ax.plot(np.exp(sol.t), sol.y[2] * 3e7, color = GREEN, label = r'$Y_{\Delta B}\cdot3\times10^7$')
 
-    return np.array(contour)
+handles, labels = ax.get_legend_handles_labels()
+handles[:2] = [handles[1], handles[0]]
+labels[:2] = [labels[1], labels[0]]
+ax.legend(handles, labels, loc = (0.7, 0.08))
 
-x = 0.3
-m2i = 1e5
-Mi = 1.01e8
-kappa1 = 3e-4
-kappa2 = 1.
-lmbda = 1.
-theta = np.pi / 3
-data = contour(x, kappa1, m2i, Mi)
-asyms = np.array([asym(dat[0] / x, dat[0], dat[1], kappa1, kappa2, lmbda, theta, bounds = True) for dat in data])
-np.savez('contour1',
-         x = x,
-         kappa1 = kappa1,
-         kappa2 = kappa2,
-         lmbda = lmbda,
-         theta = theta,
-         contour = data,
-         bound_mask = np.where(asyms != None)[0])
-print(time.time() - t0)
+ylim1 = -0.0002
+ylim2 = 0.0041
+ax.set_xlim(xlim1, xlim2)
+ax.set_ylim(ylim1, ylim2)
+ax.set_xscale('log')
+ax.set_xlabel(r'$T$\,[GeV]')
+
+class CustomTicker(ticker.LogFormatterSciNotation): 
+    def __call__(self, x, pos = None): 
+        if x not in [0.1, 1, 10]: 
+            return ticker.LogFormatterSciNotation.__call__(self, x, pos = None) 
+        else: 
+            return "{x:g}".format(x = x)
+
+ax.tick_params(which = 'both', direction = 'in')
+ax.xaxis.set_major_formatter(CustomTicker())
+ax.xaxis.minorticks_off()
+secxax = ax.secondary_xaxis('top')
+secxax.tick_params(which = 'both', direction = 'in')
+secxax.xaxis.minorticks_off()
+plt.setp(secxax.get_xticklabels(), visible = False)
+secyax = ax.secondary_yaxis('right', zorder = 1)
+secyax.tick_params(which = 'both', direction = 'in')
+plt.setp(secyax.get_yticklabels(), visible = False)
+
+fig.tight_layout()
+#fig.show()
+fig.savefig('highM.pdf')

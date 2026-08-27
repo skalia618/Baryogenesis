@@ -111,7 +111,7 @@ asyms = np.array([asym(50. / 0.3, 50., M, 3e-4, 1., 1., np.pi / 3) for M in Ms])
 asym0s = np.array([asym_naive(50. / 0.3, 50., M, 3e-4, 1., 1., np.pi / 3) for M in Ms])
 ax.loglog(Ms, asyms, color = BLUE)
 ax.loglog(Ms, asym0s, color = BLUE, ls = ':',)
-ax.axhline(8.8e-11, color = '0.6', ls = '--')
+ax.axhline(8.7e-11, color = '0.6', ls = '--')
 ax.text(1.9e4, 7.5e-10, r'$\epsilon Y_\mathrm{eq}^{(0)}$', ha = 'center', va = 'center', color = 0.8 * BLUE, rotation = -42.)
 ax.text(1e5, 9.8e-11, r'$Y_{\Delta B,\mathrm{obs}}$', ha = 'center', va = 'center', color = '0.5')
 
